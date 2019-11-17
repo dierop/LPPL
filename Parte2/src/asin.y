@@ -14,14 +14,17 @@
   char* id;
 }
 
-%token STRUCT_     READ_       PRINT_      IF_      ELSE_   WHILE_  TRUE_   FALSE_
-%token AND_        OR_       IGUAL_     DIST_       MAIGUAL_    MEIGUAL_ NOT_
-%token INC_        DEC_      MASIG_     MENIG_      DIVIG_      PORIG_
-%token MAY_        MEN_      ASIG_      MAS_        MENOS_      POR_    DIV_    MOD_    PARA_ 
-%token PARC_       CORA_     CORC_      LLAVEA_     LLAVEC_
+%token STRUCT_     READ_     PRINT_     IF_      ELSE_    WHILE_   TRUE_ FALSE_
+%token AND_        OR_       IGUAL_     DIST_    MAIGUAL_ MEIGUAL_ NOT_
+%token INC_        DEC_      MASIG_     MENIG_   DIVIG_   PORIG_
+%token MAY_        MEN_      ASIG_      MAS_     MENOS_   POR_     DIV_  MOD_ PARA_ 
+%token PARC_       CORA_     CORC_      LLAVEA_  LLAVEC_
 %token PUNTOCOMA_  PUNTO_ 
-%token <cent> CTE_ INT_      BOOL_
+
+%token <cent> CTE_ INT_  BOOL_
 %token <id>   ID_
+
+%type <cent> tSim con
 
 %%
 
@@ -33,8 +36,20 @@ sse    : se
 se     : dec
        | ins
        ;
-dec    : tSim    ID_      PUNTOCOMA_
-       | tSim    ID_      ASIG_  con      PUNTOCOMA_ {
+dec    : tSim    ID_      PUNTOCOMA_ {
+          if(!insTDS($2,$1,dvar,-1))
+            yyerror("Variable ya esta declarada");
+          else  dvar+=TALLA_TIPO_SIMPLE;
+          }
+       | tSim    ID_      ASIG_  con  PUNTOCOMA_ {
+           if($1 != $4) 
+               yyerror("Error de tipos en la instruccion de asignacion");
+           else{
+            if (!insTDS($2, $1, dvar, -1))
+                yyerror("identificador repetido");
+            else dvar += TALLA_TIPO_SIMPLE;
+           }}
+       | tSim    ID_      CORA_ CTE_     CORC_ PUNTOCOMA_{
            int numelem = $4;
            if($4 <= 0) {
                yyerror("Talla inapropiada del array");
@@ -45,11 +60,10 @@ dec    : tSim    ID_      PUNTOCOMA_
                 yyerror("identificador repetido");
             else dvar += numelem * TALLA_TIPO_SIMPLE;
        }
-       | tSim    ID_      CORA_ CTE_     CORC_ PUNTOCOMA_
-       | STRUCT_ LLAVEA_ lCamp  LLAVEC_ ID_    PUNTOCOMA_
+       | STRUCT_ LLAVEA_ lCamp  LLAVEC_ ID_  PUNTOCOMA_
        ;
-tSim   : INT_
-       | BOOL_
+tSim   : INT_   {$$=T_ENTERO;}
+       | BOOL_  {$$=T_LOGICO;}
        ;
 lCamp  : tSim  ID_  PUNTOCOMA_
        | lCamp tSim ID_ PUNTOCOMA_
@@ -105,9 +119,9 @@ expSuf : PARA_ exp     PARC_
        | ID_    PUNTO_ ID_
        | con
        ;
-con    : CTE_
-       | TRUE_
-       | FALSE_
+con    : CTE_   {$$=T_ENTERO;}
+       | TRUE_  {$$=T_LOGICO;}
+       | FALSE_ {$$=T_LOGICO;}
        ;
 opAsig : ASIG_
        | MASIG_
