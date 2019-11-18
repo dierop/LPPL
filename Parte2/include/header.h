@@ -21,6 +21,11 @@ extern int verbosidad;                   /* Flag si se desea una traza       */
 
 extern void yyerror(const char * msg) ;   /* Tratamiento de errores          */
 
+struct exp {
+ int valor;
+ int tipo;
+
+} EXP
 #endif  /* _HEADER_H */
 /*****************************************************************************/
 /*****************************************************************************/
