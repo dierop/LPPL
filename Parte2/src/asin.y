@@ -12,6 +12,7 @@
 %union {
   int   cent;
   char* id;
+  EXP exp;
 }
 
 %token STRUCT_     READ_     PRINT_     IF_      ELSE_    WHILE_   TRUE_ FALSE_
@@ -24,8 +25,8 @@
 %token <cent> CTE_ INT_  BOOL_
 %token <id>   ID_
 
-%type <cent> tSim con
-
+%type <cent> tSim lCamp
+%type <exp> con lCamp
 %%
 
 prog   : LLAVEA_ sse LLAVEC_
@@ -37,15 +38,15 @@ se     : dec
        | ins
        ;
 dec    : tSim    ID_      PUNTOCOMA_ {
-          if(!insTDS($2,$1,dvar,-1))
+          if(!insTdS($2,$1,dvar,-1))
             yyerror("Variable ya esta declarada");
           else  dvar+=TALLA_TIPO_SIMPLE;
           }
        | tSim    ID_      ASIG_  con  PUNTOCOMA_ {
-           if($1 != $4) 
+           if($1 != $4.tipo) 
                yyerror("Error de tipos en la instruccion de asignacion");
            else{
-            if (!insTDS($2, $1, dvar, -1))
+            if (!insTdS($2, $1, dvar, -1))
                 yyerror("identificador repetido");
             else dvar += TALLA_TIPO_SIMPLE;
            }}
@@ -60,13 +61,29 @@ dec    : tSim    ID_      PUNTOCOMA_ {
                 yyerror("identificador repetido");
             else dvar += numelem * TALLA_TIPO_SIMPLE;
        }
-       | STRUCT_ LLAVEA_ lCamp  LLAVEC_ ID_  PUNTOCOMA_
+       | STRUCT_ LLAVEA_ lCamp  LLAVEC_ ID_  PUNTOCOMA_{
+           if(!insTdS($5, T_RECORD,dvar,$3.tipo))
+            yyerror("Variable ya esta declarada");
+          else  dvar+=$3.valor ;
+       }
        ;
 tSim   : INT_   {$$=T_ENTERO;}
        | BOOL_  {$$=T_LOGICO;}
        ;
-lCamp  : tSim  ID_  PUNTOCOMA_
-       | lCamp tSim ID_ PUNTOCOMA_
+lCamp  : tSim  ID_  PUNTOCOMA_ {
+          int ref = insTdR(-1,$2,$1,0);
+          $$.valor = TALLA_TIPO_SIMPLE;
+          $$.tipo = ref
+          }
+       | lCamp tSim ID_ PUNTOCOMA_ {
+          int ref = $1.tipo;
+          int desp = $1.valor;
+          if(insTdR(ref,$3,$2,desp)==-1)
+            yyerror("Campo ya esta declarado");
+          else{  $$.valor =TALLA_TIPO_SIMPLE + desp;
+                 $$.tipo = ref;
+          }
+          }
        ;
 ins    : LLAVEA_ LLAVEC_
        | LLAVEA_ lIns LLAVEC_
@@ -103,7 +120,7 @@ expRel : expAd
        | expRel opRel expAd
        ;
 expAd  : expMul
-       | expAd opAd expMul
+       | expAd opAd expMulcon
        ;
 expMul : expUn
        | expMul opMul expUn
@@ -119,9 +136,12 @@ expSuf : PARA_ exp     PARC_
        | ID_    PUNTO_ ID_
        | con
        ;
-con    : CTE_   {$$=T_ENTERO;}
-       | TRUE_  {$$=T_LOGICO;}
-       | FALSE_ {$$=T_LOGICO;}
+con    : CTE_   {$$.tipo=T_ENTERO;
+                 $$.valor = $1}
+       | TRUE_  {$$=T_LOGICO;
+                $$.valor = TRUE}
+       | FALSE_ {$$=T_LOGICO;
+                $$.valor = FALSE}
        ;
 opAsig : ASIG_
        | MASIG_
