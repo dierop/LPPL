@@ -7,6 +7,12 @@
 #define TRUE  1
 #define FALSE 0
 #define TALLA_TIPO_SIMPLE 1
+/************************************* definicion de errores */
+#define E_VAR_DEC "Variable ya esta declarada"
+#define E_TIPOS "Error de tipos"
+#define E_TALLA_ARRAY "Talla inapropiada del array"
+#define E_CAMPO_DEC "Campo de STUCT ya declarado"
+#define E_VAR_NO_DEC "Variable no declarada antes de su uso"
 /************************************* Variables externas definidas en el AL */
 extern int yylex();
 extern int yyparse();

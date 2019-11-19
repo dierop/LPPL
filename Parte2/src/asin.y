@@ -39,31 +39,31 @@ se     : dec
        ;
 dec    : tSim    ID_      PUNTOCOMA_ {
           if(!insTdS($2,$1,dvar,-1))
-            yyerror("Variable ya esta declarada");
+            yyerror(E_VAR_DEC);
           else  dvar+=TALLA_TIPO_SIMPLE;
           }
        | tSim    ID_      ASIG_  con  PUNTOCOMA_ {
            if($1 != $4.tipo) 
-               yyerror("Error de tipos en la instruccion de asignacion");
+               yyerror(E_TIPOS);
            else{
             if (!insTdS($2, $1, dvar, -1))
-                yyerror("identificador repetido");
+                yyerror(E_VAR_DEC);
             else dvar += TALLA_TIPO_SIMPLE;
            }}
        | tSim    ID_      CORA_ CTE_     CORC_ PUNTOCOMA_{
            int numelem = $4;
            if($4 <= 0) {
-               yyerror("Talla inapropiada del array");
+               yyerror(E_TALLA_ARRAY);
                numelem = 0;
             }
             int refe = insTdA($1, numelem);
             if (!instdS($2, T_ARRAY, dvar, refe))
-                yyerror("identificador repetido");
+                yyerror(E_VAR_DEC);
             else dvar += numelem * TALLA_TIPO_SIMPLE;
        }
        | STRUCT_ LLAVEA_ lCamp  LLAVEC_ ID_  PUNTOCOMA_{
            if(!insTdS($5, T_RECORD,dvar,$3.tipo))
-            yyerror("Variable ya esta declarada");
+            yyerror(E_VAR_DEC);
           else  dvar+=$3.valor ;
        }
        ;
@@ -79,7 +79,7 @@ lCamp  : tSim  ID_  PUNTOCOMA_ {
           int ref = $1.tipo;
           int desp = $1.valor;
           if(insTdR(ref,$3,$2,desp)==-1)
-            yyerror("Campo ya esta declarado");
+            yyerror(E_CAMPO_DEC);
           else{  $$.valor =TALLA_TIPO_SIMPLE + desp;
                  $$.tipo = ref;
           }
@@ -95,7 +95,11 @@ ins    : LLAVEA_ LLAVEC_
 lIns   : ins
        | lIns ins
        ;
-insES  : READ_  PARA_ ID_ PARC_ PUNTOCOMA_
+insES  : READ_  PARA_ ID_ PARC_ PUNTOCOMA_ {
+          SIMB simb = obtTdS($3);
+          if (simb.tipo == T_ERROR) 
+              yyerror(E_VAR_NO_DEC);  
+        }
        | PRINT_ PARA_ exp PARC_ PUNTOCOMA_
        ;
 insSel : IF_ PARA_ exp PARC_ ins ELSE_ ins
