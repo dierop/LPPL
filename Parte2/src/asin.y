@@ -25,7 +25,7 @@
 %token <cent> CTE_ INT_  BOOL_
 %token <id>   ID_
 
-%type <cent> tSim lCamp
+%type <cent> tSim
 %type <exp> con lCamp
 %%
 
@@ -100,11 +100,17 @@ insES  : READ_  PARA_ ID_ PARC_ PUNTOCOMA_ {
           if (simb.tipo == T_ERROR) 
               yyerror(E_VAR_NO_DEC);  
         }
-       | PRINT_ PARA_ exp PARC_ PUNTOCOMA_
+       | PRINT_ PARA_ exp PARC_ PUNTOCOMA_ 
        ;
-insSel : IF_ PARA_ exp PARC_ ins ELSE_ ins
+insSel : IF_ PARA_ exp PARC_ 
+        { if ($3.tipo != T_ERROR && $3.tipo != T_LOGICO) yyerror(E_IF_LOGICO); }
+        ELSE_ ins
        ;
-insIt  : WHILE_ PARA_ exp PARC_ ins
+
+
+insIt  : WHILE_ PARA_ exp PARC_
+        { if ($3.tipo != T_ERROR && $3.tipo != T_LOGICO) yyerror(E_WHILE_LOGICO); }
+        ins
        ;
 insExp : exp PUNTOCOMA_
        | PUNTOCOMA_
@@ -124,7 +130,7 @@ expRel : expAd
        | expRel opRel expAd
        ;
 expAd  : expMul
-       | expAd opAd expMulcon
+       | expAd opAd expMul
        ;
 expMul : expUn
        | expMul opMul expUn

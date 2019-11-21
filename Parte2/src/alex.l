@@ -56,7 +56,7 @@ letra          [a-zA-Z]
 "-"                                 { retornar (MENOS_); }
 "*"                                 { retornar (POR_);   }
 "/"                                 { retornar (DIV_);   }
-"%"                                 {retornar (MOD_);  }
+"%"                                 { retornar (MOD_);  }
 "("                                 { retornar (PARA_);  }
 ")"                                 { retornar (PARC_);   }
 "["                                 { retornar (CORA_);  }

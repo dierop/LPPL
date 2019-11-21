@@ -13,6 +13,8 @@
 #define E_TALLA_ARRAY "Talla inapropiada del array"
 #define E_CAMPO_DEC "Campo de STUCT ya declarado"
 #define E_VAR_NO_DEC "Variable no declarada antes de su uso"
+#define E_IF_LOGICO "La expresion no es logica"
+#define E_WHILE_LOGICO "La expresion no es logica"
 /************************************* Variables externas definidas en el AL */
 extern int yylex();
 extern int yyparse();
