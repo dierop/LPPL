@@ -116,12 +116,14 @@ insExp : exp PUNTOCOMA_
        | PUNTOCOMA_
        ;
 exp    : expLog
+        {$$.tipo = $1.tipo;}
        | ID_ opAsig  exp
        | ID_ CORA_  exp CORC_ opAsig exp
        | ID_ PUNTO_ ID_ opAsig exp
        ;
 expLog : expIg
-       | expLog opLog expIg
+       | expLog opLog expIg 
+       {$$.tipo = T_LOGICO;}
        ;
 expIg  : expRel
        | expIg opIg expRel
