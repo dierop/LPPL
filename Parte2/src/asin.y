@@ -155,36 +155,36 @@ con    : CTE_   {$$.tipo=T_ENTERO;
        | FALSE_ {$$=T_LOGICO;
                 $$.valor = FALSE}
        ;
-opAsig : ASIG_
-       | MASIG_
-       | MENIG_
-       | PORIG_
-       | DIVIG_
+opAsig : ASIG_ {$$ = OP_ASIG;}
+       | MASIG_ {$$ = OP_ASIG_SUMA;}
+       | MENIG_ {$$ = OP_ASIG_RESTA;}
+       | PORIG_ {$$ = OP_ASIG_MULT;}
+       | DIVIG_ {$$ = OP_ASIG_DIV;}
        ;
-opLog  : AND_
-       | OR_
+opLog  : AND_ {$$ = OP_AND;}
+       | OR_ {$$ = OP_OR;}
        ;
-opIg   : IGUAL_
-       | DIST_
+opIg   : IGUAL_ {$$ = OP_IGUAL;}
+       | DIST_ {$$ = OP_DISTINTO;}
        ;
-opRel  : MAY_
-       | MEN_
-       | MAIGUAL_
-       | MEIGUAL_
+opRel  : MAY_ {$$ = OP_MAYOR;}
+       | MEN_ {$$ = OP_MENOR;}
+       | MAIGUAL_ {$$ = OP_MAYORIG;}
+       | MEIGUAL_ {$$ = OP_MENORIG;}
        ;
-opAd   : MAS_
-       | MENOS_
+opAd   : MAS_ {$$ = OP_SUMA;}
+       | MENOS_ {$$ = OP_RESTA;}
        ;
-opMul  : POR_
-       | DIV_
-       | MOD_
+opMul  : POR_ {$$ = OP_MULT;}
+       | DIV_ {$$ = OP_DIV;}
+       | MOD_ {$$ = OP_MOD;}
        ;
-opUn   : MAS_
-       | MENOS_
-       | NOT_
+opUn   : MAS_ {$$ = OP_MAS;}
+       | MENOS_ {$$ = OP_MENOS;}
+       | NOT_ {$$ = OP_NOT;}
        ;
-opIn   : INC_
-       | DEC_
+opIn   : INC_ {$$ = OP_INC;}
+       | DEC_ {$$ = OP_DEC;}
        ;
 %%
 
