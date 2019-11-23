@@ -26,6 +26,8 @@
 %token <id>   ID_
 
 %type <cent> tSim
+%type <cent> opAsig opIn opLog opIg opRel opAd opUn opMul
+%type <exp> exp expLog expIg expRel expMul expUn expSuf
 %type <exp> con lCamp
 %%
 
@@ -117,35 +119,151 @@ insExp : exp PUNTOCOMA_
        ;
 exp    : expLog
         {$$.tipo = $1.tipo;}
-       | ID_ opAsig  exp
-       | ID_ CORA_  exp CORC_ opAsig exp
-       | ID_ PUNTO_ ID_ opAsig exp
+       | ID_ opAsig  exp{ $$.tipo = T_ERROR;
+                     if ($3.tipo != T_ERROR) { //La expresion no es de tipo error, por tanto
+                          SIMB simb = obtenerTDS($1); //tomamos los valores del ID_
+                          if (simb.tipo == T_ERROR) { //Si no esta declarado
+                              yyerror(E_UNDECLARED);
+                          else if (simb.tipo != $3.tipo) { //Si no tiene el mismo tipo las expresiones
+                              yyerror(E_TIPOS);
+                          } else { //en otro caso, asumimos que es correcto y por tanto
+                              $$.tipo = simb.tipo;
+                              $$.valid = FALSE;
+                          }
+                      } }
+       | ID_ CORA_  exp CORC_ opAsig exp{ $$.tipo = T_ERROR;
+                                          if ($3.tipo != T_ERROR && $6.tipo != T_ERROR) { //Ninguna de las dos expresiones es de tipo error
+                                               SIMB simb = obtenerTDS($1);
+                                               if (simb.tipo == T_ERROR) {//La expresion principal tampoco es de tipo error
+                                                   yyerror(E_VAR_NO_DEC);
+                                               } else if (simb.tipo != T_ARRAY) {//Corchetes sobre una expresion que no es un array
+                                                   yyerror(E_VAR_WITH_INDEX);
+                                               } else {
+                                                   DIM dim = obtenerInfoArray(simb.ref); //Obtenemos la informacion del array
+                                                   if (dim.telem != $6.tipo) { //El tipo de los elemntos del array coincide con el elemento que intentamos introducir
+                                                       yyerror(E_TIPOS);
+                                                   } else if (($3.valid == TRUE && $6.valid == TRUE) && ($3.valor < 0 || $3.valor >= dim.nelem)) {// Comprobamos tanto que el array y el elemento son validos como si el indice del array esta dentro de la talla
+                                                       yyerror(E_INDICE_ARRAY);
+                                                   } else { //Asignamos
+                                                       $$.tipo = dim.telem;
+                                                       $$.valid = TRUE;
+                                                   }
+                                               }
+                                           } }
+       | ID_ PUNTO_ ID_ opAsig exp{ $$.tipo = T_ERROR
+                                   if($1.tipo != T_ERROR && $3.tipo != T_ERROR && $5.tipo == T_ERROR){// Comprobamos que ningun valor es de tipo error
+                                          SIMB simb = obtenerTDS($5)
+                                          if(simb.tipo == T_ERROR) {
+                                                 yyerror(E_VAR_NO_DEC);
+                                          } else if(simb.tipo != T_ARRAY){
+                                                 yyerror(E_TIPOS);
+                                          } else {
+                                                 DIM dim = obtenerInfoArray(simb.ref);
+                                                 if(dim.telem != $5.tipo){
+                                                        yyerror(E_TIPOS);
+                                                 } else if ($5.valid != TRUE && ($1.valor < 0 || $1.valor >= dim.nelem)){
+                                                        yyerror(E_INDICE_ARRAY);
+                                                 } else{
+                                                        $$.tipo = dim.telem;
+                                                        $$.valid = TRUE;
+                                                 }
+                                          }
+                                    }
+                                   }
        ;
-expLog : expIg
-       | expLog opLog expIg 
-       {$$.tipo = T_LOGICO;}
+expLog : expIg { $$.tipo = $1.tipo; $$.valor = $1.valor; $$.valid = $1.valid; }
+       | expLog opLog expIg //{$$.tipo = T_LOGICO;}
        ;
-expIg  : expRel
+expIg  : expRel { $$.tipo = $1.tipo; $$.valor = $1.valor; $$.valid = $1.valid; }
        | expIg opIg expRel
        ;
-expRel : expAd
+expRel : expAd { $$.tipo = $1.tipo; $$.valor = $1.valor; $$.valid = $1.valid; }
        | expRel opRel expAd
        ;
-expAd  : expMul
-       | expAd opAd expMul
+expAd  : expMul { $$.tipo = $1.tipo; $$.valor = $1.valor; $$.valid = $1.valid; }
+       | expAd opAd expMul{ $$.tipo = T_ERROR;
+                            if ($1.tipo != T_ERROR && $3.tipo != T_ERROR) {
+                                 if ($1.tipo != $3.tipo) {
+                                     yyerror("Tipos no coinciden en operacion multiplicativa");
+                                 } else if ($1.tipo != T_ENTERO) {
+                                     yyerror("Operacion multiplicativa solo acepta argumentos enteros");
+                                 } else { //Descartamos que los valores no sean validos
+                                     $$.tipo = T_ENTERO;
+                                     if ($1.valid == TRUE && $3.valid == TRUE) { //Descartamos expresiones invalidas
+                                         if ($2 == OP_MULT) //Caso Multiplicacion
+                                             $$.valor = $1.valor * $3.valor;
+                                         else if ($2 == OP_DIV) { //Caso Division
+                                             if ($3.valor == 0) { //Si el segundo valor es 0, error
+                                                 $$.tipo = T_ERROR;
+                                                 yyerror("Division entre 0");
+                                             } else {
+                                                 $$.valor = $1.valor / $3.valor;
+                                             }
+                                         } else if ($2 == OP_MOD) { //Caso Modulo
+                                             if ($3.valor == 0) { //Si el segundo valor es 0, error
+                                                 $$.tipo = T_ERROR;
+                                                 yyerror("Modulo entre 0");
+                                             } else {
+                                                 $$.valor = $1.valor % $3.valor;
+                                             }
+                                         }
+                                         $$.valid = TRUE;
+                                     } else $$.valid = FALSE;
+                                 }
+                             } }
        ;
-expMul : expUn
-       | expMul opMul expUn
+expMul : expUn { $$.tipo = $1.tipo; $$.valor = $1.valor; $$.valid = $1.valid; }
+       | expMul opMul expUn{ $$.tipo = T_ERROR;
+                      $$.valid = $2.valid;
+                      $$.tipo = T_ENTERO
+                      }
+                      { $$.tipo = T_ERROR;
+                      $$.valid = $2.valid;
+                      $$.tipo = T_LOGICO}
        ;
-expUn  : expSuf
-       | opUn  expUn
+expUn  : expSuf { $$.tipo = $1.tipo; $$.valor = $1.valor; $$.valid = $1.valid; }
+       | opUn  expUn{ $$.tipo = T_ERROR;
+                      $$.valid = $2.valid;
+                      $$.tipo = T_ENTERO
+                      }
+                      { $$.tipo = T_ERROR;
+                      $$.valid = $2.valid;
+                      $$.tipo = T_ENTERO}
        | opIn  ID_
-       ;
-expSuf : PARA_ exp     PARC_
+                     { SIMB simb = obtenerTDS($2);//Comprobamos que la variable ID_ ha sido declarada
+                      $$.tipo = T_ERROR;
+                      if (simb.tipo == T_ERROR)
+                          yyerror(E_VAR_NO_DEC);
+                      else
+                          $$.tipo = simb.tipo;
+                      $$.valid = FALSE; }
+                     
+expSuf : PARA_ exp     PARC_ { $$.tipo = $1.tipo; $$.valor = $1.valor; $$.valid = $1.valid; }
        | ID_    opIn
+               { SIMB simb = obtenerTDS($1); //Comprobamos que la variable ID_ ha sido declarada
+               $$.tipo = T_ERROR;
+               $$.valid = FALSE;
+               if (simb.tipo == T_ERROR)
+                   yyerror(E_VAR_NO_DEC);
+               else
+                   $$.tipo = simb.tipo; }
        | ID_    CORA_  exp CORC_
+              { SIMB simb = obtenerTDS($1); //Comprobamos que la variable ID_ ha sido declarada
+               $$.tipo = T_ERROR;
+               $$.valid = FALSE;
+               if (simb.tipo == T_ERROR)
+                   yyerror(E_VAR_NO_DEC);
+               else
+                     $$.tipo = simb.tipo;}
        | ID_
-       | ID_    PUNTO_ ID_
+              { SIMB simb = obtenerTDS($1); //Comprobamos que la variable ID_ ha sido declarada
+               $$.tipo = T_ERROR;
+               $$.valid = FALSE;
+               if (simb.tipo == T_ERROR)
+                   yyerror(E_VAR_NO_DEC);
+               else
+                     $$.tipo = simb.tipo;}
+       //| ID_    PUNTO_ ID_ no he visto que se necesite poder declarar una expresion tal que ID.ID en P2-ASemantico
        | con
        ;
 con    : CTE_   {$$.tipo=T_ENTERO;

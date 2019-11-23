@@ -11,6 +11,7 @@
 #define E_VAR_DEC "Variable ya esta declarada"
 #define E_TIPOS "Error de tipos"
 #define E_TALLA_ARRAY "Talla inapropiada del array"
+#define E_INDICE_ARRAY "Indice inapropiadado para el array"
 #define E_CAMPO_DEC "Campo de STUCT ya declarado"
 #define E_VAR_NO_DEC "Variable no declarada antes de su uso"
 #define E_IF_LOGICO "La expresion no es logica"
