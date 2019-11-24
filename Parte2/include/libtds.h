@@ -51,13 +51,13 @@ int insTdR(int refe, char *nom, int tipo, int desp) ;
    de un determinado campo: nombre de campo, "nom"; tipo de campo, "tipo"; y 
    desplazamiento relativo del campo en el registro, "desp". Si "ref = -1" 
    entonces crea una nueva nueva entrada en la Tabla de Registros con este
-   campo y devuelve su referencia. Comprueba adem�s que el nombre del campo 
+   campo y devuelve su referencia. Comprueba ademas que el nombre del campo 
    no este repetido en el registro, devolviendo "-1" en ese caso.            */
 
 SIMB obtTdS(char *nom) ;
 /* Obtiene toda la informacion asociada con un objeto de nombre, "nom", y la
    devuelve en una estructura de tipo "SIMB" (ver "libtds.h"). Si el objeto 
-   no est� declarado, devuelve "T_ERROR" en el campo "tipo".                 */
+   no esta declarado, devuelve "T_ERROR" en el campo "tipo".                 */
 
 DIM obtTdA(int ref) ;
 /* Devuelve toda la informacion asociada con un array referenciado por "ref" 

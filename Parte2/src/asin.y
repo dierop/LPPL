@@ -26,7 +26,7 @@
 %token <id>   ID_
 
 %type <cent> tSim
-%type <cent> opAsig opIn opLog opIg opRel opAd opUn opMul
+//%type <cent> opAsig opIn opLog opIg opRel opAd opUn opMul
 %type <exp> exp expLog expIg expRel expMul expUn expSuf
 %type <exp> con lCamp
 %%
@@ -127,7 +127,7 @@ exp    : expLog
                      if ($3.tipo != T_ERROR) { //La expresion no es de tipo error, por tanto
                           SIMB simb = obtenerTDS($1); //tomamos los valores del ID_
                           if (simb.tipo == T_ERROR) { //Si no esta declarado
-                              yyerror(E_UNDECLARED);
+                              yyerror(E_VAR_NO_DEC);
                           else if (simb.tipo != $3.tipo) { //Si no tiene el mismo tipo las expresiones
                               yyerror(E_TIPOS);
                           } else { //en otro caso, asumimos que es correcto y por tanto
@@ -141,7 +141,7 @@ exp    : expLog
                                                if (simb.tipo == T_ERROR) {//La expresion principal tampoco es de tipo error
                                                    yyerror(E_VAR_NO_DEC);
                                                } else if (simb.tipo != T_ARRAY) {//Corchetes sobre una expresion que no es un array
-                                                   yyerror(E_VAR_WITH_INDEX);
+                                                   yyerror(E_VAR_CON_INDICE);
                                                } else {
                                                  $$.tipo = dim.telem;
                                                }
@@ -247,7 +247,7 @@ expUn  : expSuf { $$.tipo = $1.tipo;}
                         $$.tipo = simb.tipo;
         }
                      
-expSuf : PARA_ exp     PARC_ { $$.tipo = $2.tipo;}//sea error o otra cosa se sube
+expSuf : PARA_ exp  PARC_ { $$.tipo = $2.tipo;}//sea error o otra cosa se sube
        | ID_    opIn
                { SIMB simb = obtenerTDS($1); //Comprobamos que la variable ID_ ha sido declarada
                $$.tipo = T_ERROR;

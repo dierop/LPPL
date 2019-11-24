@@ -12,6 +12,7 @@
 #define E_TIPOS "Error de tipos"
 #define E_TALLA_ARRAY "Talla inapropiada del array"
 #define E_INDICE_ARRAY "Indice inapropiadado para el array"
+#define E_VAR_CON_INDICE "La variable no es un array"
 #define E_CAMPO_DEC "Campo de STRUCT ya declarado"
 #define E_CAMPO_NO_DEC "Campo de STRUCT no declarada antes de su uso"
 #define E_VAR_NO_DEC "Variable no declarada antes de su uso"
