@@ -102,7 +102,11 @@ insES  : READ_  PARA_ ID_ PARC_ PUNTOCOMA_ {
           if (simb.tipo == T_ERROR) 
               yyerror(E_VAR_NO_DEC);  
         }
-       | PRINT_ PARA_ exp PARC_ PUNTOCOMA_ 
+       | PRINT_ PARA_ exp PARC_ PUNTOCOMA_ {
+           if($3.tipo != T_ENTERO || $3.tipo != T_LOGICO) {
+               yyerror(E_TIPOS);
+           }
+       }
        ;
 insSel : IF_ PARA_ exp PARC_ 
         { if ($3.tipo != T_LOGICO) yyerror(E_IF_LOGICO); }
@@ -160,7 +164,26 @@ exp    : expLog
                                    
        ;
 expLog : expIg { $$.tipo = $1.tipo; $$.valor = $1.valor;}
-       | expLog opLog expIg //{$$.tipo = T_LOGICO;}
+       | expLog opLog expIg {
+           if($1.tipo == T_ERROR || $3.tipo == T_ERROR) {
+               $$.tipo = T_ERROR;
+           } else if ($1.tipo != $3.tipo) {
+               yyerror(E_TIPOS);
+           } else if($1.tipo != T_LOGICO) {
+               yyerror(E_IF_LOGICO);
+           } else {
+               $$.tipo = T_LOGICO;
+               if($2 == AND_) {
+                   if($1.valor == TRUE && $3.valor == TRUE) {
+                       $$.valor = TRUE;
+                   } else $$.valor = FALSE;
+               } else {
+                   if($1.valor == TRUE || $3.valor == TRUE) {
+                       $$.valor = TRUE;
+                   } else $$.valor = FALSE;
+               }
+           }
+       }
        ;
 expIg  : expRel { $$.tipo = $1.tipo; $$.valor = $1.valor;}
        | expIg opIg expRel
