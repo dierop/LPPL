@@ -13,10 +13,13 @@
 #define E_TALLA_ARRAY "Talla inapropiada del array"
 #define E_INDICE_ARRAY "Indice inapropiadado para el array"
 #define E_CAMPO_DEC "Campo de STRUCT ya declarado"
+#define E_CAMPO_NO_DEC "Campo de STRUCT no declarada antes de su uso"
 #define E_VAR_NO_DEC "Variable no declarada antes de su uso"
 #define E_IF_LOGICO "La expresion no es logica"
 #define E_WHILE_LOGICO "La expresion no es logica"
-
+#define E_VAR_NO_TIPO_ESPERADO "La variable no es del tipo adecuado para su uso en la espresion"
+#define E_EXP_UNARIA "Error en 'expresion unaria'"
+#define E_EXP_IGUALDAD "Error en 'expresion de Igualdad'"
 /************************************* Variables externas definidas en el AL */
 extern int yylex();
 extern int yyparse();

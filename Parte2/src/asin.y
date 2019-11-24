@@ -163,29 +163,29 @@ exp    : expLog
                                     }
                                    
        ;
-expLog : expIg { $$.tipo = $1.tipo; $$.valor = $1.valor;}
+expLog : expIg { $$.tipo = $1.tipo;}
        | expLog opLog expIg {
            if($1.tipo == T_ERROR || $3.tipo == T_ERROR) {
                $$.tipo = T_ERROR;
            } else if ($1.tipo != $3.tipo) {
                yyerror(E_TIPOS);
-           } else if($1.tipo != T_LOGICO) {
+           } else if($1.tipo != T_LOGICO ||$3.tipo != T_LOGICO ) {
                yyerror(E_IF_LOGICO);
            } else $$.tipo = T_LOGICO;
        }
        ;
-expIg  : expRel { $$.tipo = $1.tipo; $$.valor = $1.valor;}
+expIg  : expRel { $$.tipo = $1.tipo;}
        | expIg opIg expRel {
             if($1.tipo == T_ERROR || $3.tipo == T_ERROR) {
                $$.tipo = T_ERROR;
            } else if ($1.tipo != $3.tipo) {
                yyerror(E_TIPOS);
-            } else if($1.tipo != T_LOGICO) {
-               yyerror(E_IF_LOGICO);
+            } else if($1.tipo != T_ENTERO|| $3.tipo != T_ENTERO) {
+               yyerror(E_EXP_IGUALDAD);
             } else $$.tipo = T_LOGICO;
        }
        ;
-expRel : expAd { $$.tipo = $1.tipo; $$.valor = $1.valor;}
+expRel : expAd { $$.tipo = $1.tipo;}
        | expRel opRel expAd {
            if($1.tipo == T_ERROR || $3.tipo == T_ERROR) {
                $$.tipo = T_ERROR;
@@ -196,7 +196,7 @@ expRel : expAd { $$.tipo = $1.tipo; $$.valor = $1.valor;}
             } else $$.tipo = T_LOGICO;
        }
        ;
-expAd  : expMul { $$.tipo = $1.tipo; $$.valor = $1.valor;}
+expAd  : expMul { $$.tipo = $1.tipo;}
        | expAd opAd expMul{ 
            $$.tipo = T_ERROR;
             if ($1.tipo != T_ERROR && $3.tipo != T_ERROR) {
@@ -208,7 +208,7 @@ expAd  : expMul { $$.tipo = $1.tipo; $$.valor = $1.valor;}
             }
         } 
        ;
-expMul : expUn { $$.tipo = $1.tipo; $$.valor = $1.valor;}
+expMul : expUn { $$.tipo = $1.tipo;}
        | expMul opMul expUn {
             $$.tipo = T_ERROR;
             if ($1.tipo != T_ERROR && $3.tipo != T_ERROR) {
@@ -220,15 +220,20 @@ expMul : expUn { $$.tipo = $1.tipo; $$.valor = $1.valor;}
             }
        }
        ;
-expUn  : expSuf { $$.tipo = $1.tipo; $$.valor = $1.valor;}
+expUn  : expSuf { $$.tipo = $1.tipo;}
        | opUn  expUn {
             if ($2.tipo == T_ERROR) $$.tipo = T_ERROR;
             else {
-                if ($2.tipo == T_ENTERO) {
-                    $$.tipo = T_ENTERO;
-                } else if ($2.tipo == T_LOGICO) {
-                    $$.tipo = T_LOGICO;
-                }
+                if ($1 == NOT_){
+                    if ($2.tipo != T_LOGICO) 
+                        yyerror(E_EXP_UNARIA);
+                    else
+                        $$.tipo = $2.tipo;
+                } 
+                else  if ($2.tipo != T_ENTERO) 
+                    yyerror(E_EXP_UNARIA);
+                else
+                    $$.tipo = $2.tipo;
             }
        }
        | opIn  ID_ {
@@ -236,40 +241,62 @@ expUn  : expSuf { $$.tipo = $1.tipo; $$.valor = $1.valor;}
             $$.tipo = T_ERROR;
             if (simb.tipo == T_ERROR)
                 yyerror(E_VAR_NO_DEC);
-            else $$.tipo = simb.tipo;
+            else    if(simb.tipo !=T_ENTERO)
+                        yyerror(E_VAR_NO_TIPO_ESPERADO);
+                    else
+                        $$.tipo = simb.tipo;
         }
                      
-expSuf : PARA_ exp     PARC_ { $$.tipo = $1.tipo; $$.valor = $1.valor;}
+expSuf : PARA_ exp     PARC_ { $$.tipo = $2.tipo;}//sea error o otra cosa se sube
        | ID_    opIn
                { SIMB simb = obtenerTDS($1); //Comprobamos que la variable ID_ ha sido declarada
                $$.tipo = T_ERROR;
                if (simb.tipo == T_ERROR)
                    yyerror(E_VAR_NO_DEC);
-               else
-                   $$.tipo = simb.tipo; }
+               else if(simb.tipo !=T_ENTERO)
+                        yyerror(E_VAR_NO_TIPO_ESPERADO);
+                    else
+                        $$.tipo = simb.tipo; }
        | ID_    CORA_  exp CORC_
-              { SIMB simb = obtenerTDS($1); //Comprobamos que la variable ID_ ha sido declarada
+              { SIMB simb = obtenerTdS($1); //Comprobamos que la variable ID_ ha sido declarada
                $$.tipo = T_ERROR;
                if (simb.tipo == T_ERROR)
                    yyerror(E_VAR_NO_DEC);
-               else
-                     $$.tipo = simb.tipo;}
+               else if(simb.tipo != T_ARRAY)
+                    yyerror(E_VAR_NO_TIPO_ESPERADO);
+                    else
+                     $$.tipo = obtTdA(simb.ref).telem;}
        | ID_
-              { SIMB simb = obtenerTDS($1); //Comprobamos que la variable ID_ ha sido declarada
+              { SIMB simb = obtenerTdS($1); //Comprobamos que la variable ID_ ha sido declarada
                $$.tipo = T_ERROR;
                if (simb.tipo == T_ERROR)
                    yyerror(E_VAR_NO_DEC);
                else
                      $$.tipo = simb.tipo;}
-       //| ID_    PUNTO_ ID_ no he visto que se necesite poder declarar una expresion tal que ID.ID en P2-ASemantico
-       | con
+       | ID_    PUNTO_ ID_{
+            $$.tipo = T_ERROR;
+            SIMB simb = obtenerTdS($1);
+            if (simb.tipo == T_ERROR)
+                   yyerror(E_VAR_NO_DEC);
+            else{   if (simb.tipo !=T_RECORD)
+                        yyerror(E_TIPOS);
+                    else{  CAMP reg = obtenerTdR(simb.ref,$3);
+                            if (reg.tipo == T_ERROR)
+                                    yyerror(E_CAMPO_NO_DEC);
+                            else{
+                                $$.tipo = reg.tipo
+                            }
+                    }
+            }}
+       | con    {$$.tipo=$1.tipo;}
+
        ;
 con    : CTE_   {$$.tipo=T_ENTERO;
-                 $$.valor = $1}
+                 $$.valor = $1;}
        | TRUE_  {$$=T_LOGICO;
-                $$.valor = TRUE}
+                $$.valor = TRUE;}
        | FALSE_ {$$=T_LOGICO;
-                $$.valor = FALSE}
+                $$.valor = FALSE;}
        ;
 opAsig : ASIG_ 
        | MASIG_ 
