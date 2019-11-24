@@ -11,7 +11,7 @@
 
 %union {
   int   cent;
-  char* id;
+  char* ident;
   EXP exp;
 }
 
@@ -23,11 +23,11 @@
 %token PUNTOCOMA_  PUNTO_ 
 
 %token <cent> CTE_ INT_  BOOL_
-%token <id>   ID_
+%token <ident>   ID_
 
 %type <cent> tSim opUn
 //%type <cent> opAsig opIn opLog opIg opRel opAd opUn opMul
-%type <exp> exp expLog expIg expRel expMul expUn expSuf
+%type <exp> expr expLog expIg expRel expMul expUn expSuf expAd
 %type <exp> con lCamp
 %%
 
@@ -104,28 +104,28 @@ insES  : READ_  PARA_ ID_ PARC_ PUNTOCOMA_ {
           else if(simb.tipo !=T_ENTERO)
                 yyerror(E_VAR_NO_TIPO_ESPERADO);
          }
-       | PRINT_ PARA_ exp PARC_ PUNTOCOMA_ {
+       | PRINT_ PARA_ expr PARC_ PUNTOCOMA_ {
            if($3.tipo != T_ENTERO || $3.tipo != T_LOGICO) {
                yyerror(E_TIPOS);
            }
        }
        ;
-insSel : IF_ PARA_ exp PARC_ 
+insSel : IF_ PARA_ expr PARC_ 
         { if ($3.tipo != T_LOGICO && $3.tipo != T_ERROR) yyerror(E_IF_LOGICO); }
         ELSE_ ins
        ;
 
 
-insIt  : WHILE_ PARA_ exp PARC_
+insIt  : WHILE_ PARA_ expr PARC_
         { if ($3.tipo != T_LOGICO && $3.tipo != T_ERROR) yyerror(E_WHILE_LOGICO); }
         ins
        ;
-insExp : exp PUNTOCOMA_
+insExp : expr PUNTOCOMA_
        | PUNTOCOMA_
        ;
-exp    : expLog
+expr    : expLog
         {$$.tipo = $1.tipo;}
-       | ID_ opAsig  exp{ $$.tipo = T_ERROR;
+       | ID_ opAsig  expr{ $$.tipo = T_ERROR;
                      if ($3.tipo != T_ERROR) { //La expresion no es de tipo error, por tanto
                           SIMB simb = obtenerTDS($1); //tomamos los valores del ID_
                           if (simb.tipo == T_ERROR) { //Si no esta declarado
@@ -136,7 +136,7 @@ exp    : expLog
                               $$.tipo = simb.tipo;
                           }
                       } } }
-       | ID_ CORA_  exp CORC_ opAsig exp{ $$.tipo = T_ERROR;
+       | ID_ CORA_  expr CORC_ opAsig expr{ $$.tipo = T_ERROR;
                                           if ($3.tipo != T_ERROR && $6.tipo != T_ERROR) { //Ninguna de las dos expresiones es de tipo error
                                                SIMB simb = obtenerTDS($1);
                                                $$.tipo = T_ERROR
@@ -154,7 +154,7 @@ exp    : expLog
                                                         }    
                                                  }}
                                             }}
-       | ID_ PUNTO_ ID_ opAsig exp{ $$.tipo = T_ERROR;
+       | ID_ PUNTO_ ID_ opAsig expr{ $$.tipo = T_ERROR;
                                     SIMB simb = obtenerTDS($1);
                                     if(simb.tipo == T_ERROR) 
                                             yyerror(E_VAR_NO_DEC);
@@ -257,7 +257,7 @@ expUn  : expSuf { $$.tipo = $1.tipo;}
                         $$.tipo = simb.tipo;
         }
                      
-expSuf : PARA_ exp  PARC_ { $$.tipo = $2.tipo;}//sea error o otra cosa se sube
+expSuf : PARA_ expr  PARC_ { $$.tipo = $2.tipo;}//sea error o otra cosa se sube
        | ID_    opIn
                { SIMB simb = obtenerTDS($1); //Comprobamos que la variable ID_ ha sido declarada
                $$.tipo = T_ERROR;
@@ -267,7 +267,7 @@ expSuf : PARA_ exp  PARC_ { $$.tipo = $2.tipo;}//sea error o otra cosa se sube
                         yyerror(E_VAR_NO_TIPO_ESPERADO);
                     else
                         $$.tipo = simb.tipo; }
-       | ID_    CORA_  exp CORC_
+       | ID_    CORA_  expr CORC_
               { SIMB simb = obtenerTdS($1); //Comprobamos que la variable ID_ ha sido declarada
                $$.tipo = T_ERROR;
                if (simb.tipo == T_ERROR)
