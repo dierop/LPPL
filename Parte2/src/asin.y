@@ -25,7 +25,7 @@
 %token <cent> CTE_ INT_  BOOL_
 %token <id>   ID_
 
-%type <cent> tSim
+%type <cent> tSim opUn
 //%type <cent> opAsig opIn opLog opIg opRel opAd opUn opMul
 %type <exp> exp expLog expIg expRel expMul expUn expSuf
 %type <exp> con lCamp
@@ -78,13 +78,13 @@ lCamp  : tSim  ID_  PUNTOCOMA_ {
           $$.tipo = ref
           }
        | lCamp tSim ID_ PUNTOCOMA_ {
-          int ref = $1.tipo;
-          int desp = $1.valor;
-          if(insTdR(ref,$3,$2,desp)==-1)
-            yyerror(E_CAMPO_DEC);
-          else{  $$.valor =TALLA_TIPO_SIMPLE + desp;
-                 $$.tipo = ref;
-          }
+            int ref = $1.tipo;
+            int desp = $1.valor;
+            if(insTdR(ref,$3,$2,desp)==-1)
+                yyerror(E_CAMPO_DEC);
+            else{  $$.valor =TALLA_TIPO_SIMPLE + desp;
+                   $$.tipo = ref;
+            }
           }
        ;
 ins    : LLAVEA_ LLAVEC_
@@ -100,8 +100,10 @@ lIns   : ins
 insES  : READ_  PARA_ ID_ PARC_ PUNTOCOMA_ {
           SIMB simb = obtTdS($3);
           if (simb.tipo == T_ERROR) 
-              yyerror(E_VAR_NO_DEC);  
-        }
+              yyerror(E_VAR_NO_DEC);
+          else if(simb.tipo !=T_ENTERO)
+                yyerror(E_VAR_NO_TIPO_ESPERADO);
+         }
        | PRINT_ PARA_ exp PARC_ PUNTOCOMA_ {
            if($3.tipo != T_ENTERO || $3.tipo != T_LOGICO) {
                yyerror(E_TIPOS);
@@ -109,13 +111,13 @@ insES  : READ_  PARA_ ID_ PARC_ PUNTOCOMA_ {
        }
        ;
 insSel : IF_ PARA_ exp PARC_ 
-        { if ($3.tipo != T_LOGICO) yyerror(E_IF_LOGICO); }
+        { if ($3.tipo != T_LOGICO && $3.tipo != T_ERROR) yyerror(E_IF_LOGICO); }
         ELSE_ ins
        ;
 
 
 insIt  : WHILE_ PARA_ exp PARC_
-        { if ($3.tipo != T_LOGICO) yyerror(E_WHILE_LOGICO); }
+        { if ($3.tipo != T_LOGICO && $3.tipo != T_ERROR) yyerror(E_WHILE_LOGICO); }
         ins
        ;
 insExp : exp PUNTOCOMA_
@@ -140,26 +142,34 @@ exp    : expLog
                                                $$.tipo = T_ERROR
                                                if (simb.tipo == T_ERROR) {//La expresion principal tampoco es de tipo error
                                                    yyerror(E_VAR_NO_DEC);
-                                               } else if (simb.tipo != T_ARRAY) {//Corchetes sobre una expresion que no es un array
+                                               } else{ if (simb.tipo != T_ARRAY) {//Corchetes sobre una expresion que no es un array
                                                    yyerror(E_VAR_CON_INDICE);
-                                               } else {
-                                                 $$.tipo = dim.telem;
-                                               }
-                                           } }
-       | ID_ PUNTO_ ID_ opAsig exp{ $$.tipo = T_ERROR
-                                   if($1.tipo != T_ERROR && $3.tipo != T_ERROR && $5.tipo == T_ERROR){// Comprobamos que ningun valor es de tipo error
-                                          SIMB simb = obtenerTDS($5)
-                                          $$.tipo == T_ERROR
-                                          if(simb.tipo == T_ERROR) {
-                                                 yyerror(E_VAR_NO_DEC);
-                                          } else if(simb.tipo != T_ARRAY){
-                                                 yyerror(E_TIPOS);
-                                          } else if(dim.telem != $5.tipo){
+                                               } else { if($3.tipo != T_ENTERO)
+                                                            yyerror(E_INDICE_ARRAY);
+                                                        else{
+                                                            if(obtTdA(simb.ref).telem!=$6.tipo)
+                                                                yyerror(E_TIPOS);
+                                                            else
+                                                                $$.tipo = $6.tipo;
+                                                        }    
+                                                 }}
+                                            }}
+       | ID_ PUNTO_ ID_ opAsig exp{ $$.tipo = T_ERROR;
+                                    SIMB simb = obtenerTDS($1);
+                                    if(simb.tipo == T_ERROR) 
+                                            yyerror(E_VAR_NO_DEC);
+                                    else{   if (simb.tipo !=T_RECORD)
+                                                yyerror(E_TIPOS);
+                                            else{  CAMP reg = obtenerTdR(simb.ref,$3);
+                                                if (reg.tipo == T_ERROR)
+                                                    yyerror(E_CAMPO_NO_DEC);
+                                                else{ if(reg.tipo!= $5.tipo)
                                                         yyerror(E_TIPOS);
-                                          } else{
-                                                 $$.tipo = dim.telem;
-                                          }
-                                          }
+                                                    else
+                                                        $$.tipo =reg.tipo
+                                                    }
+                                                }
+                                        }
                                     }
                                    
        ;
@@ -224,7 +234,7 @@ expUn  : expSuf { $$.tipo = $1.tipo;}
        | opUn  expUn {
             if ($2.tipo == T_ERROR) $$.tipo = T_ERROR;
             else {
-                if ($1 == NOT_){
+                if ($1 == 1){
                     if ($2.tipo != T_LOGICO) 
                         yyerror(E_EXP_UNARIA);
                     else
@@ -322,9 +332,9 @@ opMul  : POR_
        | DIV_ 
        | MOD_ 
        ;
-opUn   : MAS_ 
-       | MENOS_ 
-       | NOT_ 
+opUn   : MAS_ {$$=0;}
+       | MENOS_ {$$=0;}
+       | NOT_ {$$=1;}
        ;
 opIn   : INC_ 
        | DEC_ 
