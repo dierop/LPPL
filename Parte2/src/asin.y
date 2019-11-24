@@ -186,7 +186,24 @@ expLog : expIg { $$.tipo = $1.tipo; $$.valor = $1.valor;}
        }
        ;
 expIg  : expRel { $$.tipo = $1.tipo; $$.valor = $1.valor;}
-       | expIg opIg expRel
+       | expIg opIg expRel {
+            if($1.tipo == T_ERROR || $3.tipo == T_ERROR) {
+               $$.tipo = T_ERROR;
+           } else if ($1.tipo != $3.tipo) {
+               yyerror(E_TIPOS);
+            } else if($1.tipo != T_LOGICO) {
+               yyerror(E_IF_LOGICO);
+            } else {
+                $$.tipo = T_LOGICO;
+                if ($2 == IGUAL_) {
+                    if($1.valor == $3.valor) $$.valor = TRUE;
+                    else $$.valor = FALSE;
+                } else {
+                    if($1.valor != $3.valor) $$.valor = TRUE;
+                    else $$.valor = FALSE;
+                }
+            }
+       }
        ;
 expRel : expAd { $$.tipo = $1.tipo; $$.valor = $1.valor;}
        | expRel opRel expAd
