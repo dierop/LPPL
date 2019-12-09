@@ -39,6 +39,7 @@ extern void yyerror(const char * msg) ;   /* Tratamiento de errores          */
 typedef struct exp {
  int valor;
  int tipo;
+ int pos;
 
 } EXP;
 #endif  /* _HEADER_H */
