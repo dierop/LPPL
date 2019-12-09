@@ -7,6 +7,7 @@
 #include <string.h>
 #include "header.h"
 #include "libtds.h"
+#include "libgci.h"
 %}
 
 %union {
@@ -25,13 +26,14 @@
 %token <cent> CTE_ INT_  BOOL_
 %token <ident>   ID_
 
-%type <cent> tSim opUn
+%type <cent> tSim 
 %type <cent> opAsig opIn opLog opIg opRel opAd opUn opMul
 %type <exp> expr expLog expIg expRel expMul expUn expSuf expAd
 %type <exp> con lCamp
 %%
 
 prog   : LLAVEA_ sse LLAVEC_
+        { emite(FIN,crArgNul(), crArgNul(), crArgNul()); }
        ;
 sse    : se
        | sse se
@@ -50,8 +52,10 @@ dec    : tSim    ID_      PUNTOCOMA_ {
            else{
             if (!insTdS($2, $1, dvar, -1))
                 yyerror(E_VAR_DEC);
-            else dvar += TALLA_TIPO_SIMPLE;
-           }}
+            else{
+                emite(EASIG,crArgPos($4.pos),crArgNul(),crArgPos(dvar)); 
+                dvar += TALLA_TIPO_SIMPLE;
+           }}}
        | tSim    ID_      CORA_ CTE_     CORC_ PUNTOCOMA_{
            int numelem = $4;
            if($4 <= 0) {
@@ -105,7 +109,7 @@ insES  : READ_  PARA_ ID_ PARC_ PUNTOCOMA_ {
                 yyerror(E_VAR_NO_TIPO_ESPERADO);
          }
        | PRINT_ PARA_ expr PARC_ PUNTOCOMA_ {
-           if($3.tipo != T_ENTERO || $3.tipo != T_LOGICO) {
+           if($3.tipo != T_ENTERO && $3.tipo != T_LOGICO) {
                yyerror(E_TIPOS);
            }
        }
@@ -301,11 +305,20 @@ expSuf : PARA_ expr  PARC_ { $$.tipo = $2.tipo;}//sea error o otra cosa se sube
        | con    {$$.tipo=$1.tipo;}
        ;
 con    : CTE_   {$$.tipo=T_ENTERO;
-                 $$.valor = $1;}
+                 $$.valor = $1;
+                 //$$.pos=creaVarTemp();
+                 //emite(EASIG, crArgEnt($$.valor), crArgNul(), crArgPos($$.pos)); 
+                 }
        | TRUE_  {$$.tipo=T_LOGICO;
-                $$.valor = TRUE;}
+                $$.valor = TRUE;
+                $$.pos=creaVarTemp();
+                emite(EASIG, crArgEnt(TRUE), crArgNul(), crArgPos($$.pos)); 
+                }
        | FALSE_ {$$.tipo=T_LOGICO;
-                $$.valor = FALSE;}
+                $$.valor = FALSE;
+                $$.pos=creaVarTemp();
+                emite(EASIG, crArgEnt(FALSE), crArgNul(), crArgPos($$.pos));
+                }
        ;
 opAsig : ASIG_  {$$=EASIG;}
        | MASIG_ {$$=ESUM;}
@@ -313,8 +326,8 @@ opAsig : ASIG_  {$$=EASIG;}
        | PORIG_ {$$=EMULT;}
        | DIVIG_ {$$=EDIVI;}
        ;
-opLog  : AND_ 
-       | OR_ 
+opLog  : AND_  {$$ = 0;}
+       | OR_   {$$ = 1;}
        ;
 opIg   : IGUAL_ {$$=EIGUAL;}
        | DIST_  {$$=EDIST;}
@@ -331,9 +344,9 @@ opMul  : POR_ {$$=EMULT;}
        | DIV_ {$$=EDIVI;}
        | MOD_ {$$=RESTO;}
        ;
-opUn   : MAS_ {$$=;}
+opUn   : MAS_ {$$=-1;}
        | MENOS_ {$$=ESIG;}
-       | NOT_ {$$=;}
+       | NOT_ {$$=1;}
        ;
 opIn   : INC_ {$$=ESUM;}
        | DEC_ {$$=EDIF;}
