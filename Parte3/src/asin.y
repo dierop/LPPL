@@ -107,11 +107,13 @@ insES  : READ_  PARA_ ID_ PARC_ PUNTOCOMA_ {
               yyerror(E_VAR_NO_DEC);
           else if(simb.tipo !=T_ENTERO)
                 yyerror(E_VAR_NO_TIPO_ESPERADO);
+          else emite(EREAD, crArgNul(), crArgNul(), crArgPos(simb.desp));
          }
        | PRINT_ PARA_ expr PARC_ PUNTOCOMA_ {
            if($3.tipo != T_ENTERO && $3.tipo != T_LOGICO) {
                yyerror(E_TIPOS);
            }
+           else emite(EWRITE, crArgNul(), crArgNul(), crArgPos($3.pos));
        }
        ;
 insSel : IF_ PARA_ expr PARC_ ins ELSE_ ins
@@ -306,8 +308,8 @@ expSuf : PARA_ expr  PARC_ { $$.tipo = $2.tipo;}//sea error o otra cosa se sube
        ;
 con    : CTE_   {$$.tipo=T_ENTERO;
                  $$.valor = $1;
-                 //$$.pos=creaVarTemp();
-                 //emite(EASIG, crArgEnt($$.valor), crArgNul(), crArgPos($$.pos)); 
+                 $$.pos=creaVarTemp();
+                 emite(EASIG, crArgEnt($$.valor), crArgNul(), crArgPos($$.pos)); 
                  }
        | TRUE_  {$$.tipo=T_LOGICO;
                 $$.valor = TRUE;
