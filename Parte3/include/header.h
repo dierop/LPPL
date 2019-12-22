@@ -7,6 +7,8 @@
 #define TRUE  1
 #define FALSE 0
 #define TALLA_TIPO_SIMPLE 1
+#define NOT_VAL -1
+
 /************************************* definicion de errores */
 #define E_VAR_DEC "Variable ya esta declarada"
 #define E_TIPOS "Error de tipos"
@@ -30,6 +32,7 @@ extern int   yylineno;
 
 extern int verTDS;
 extern int dvar;
+extern int si;
 /********************************* Funciones y variables externas auxiliares */
 extern int verbosidad;                   /* Flag si se desea una traza       */
 
