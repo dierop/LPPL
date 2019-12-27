@@ -209,7 +209,9 @@ expLog : expIg { $$.tipo = $1.tipo;
             }
         }}
        ;
-expIg  : expRel { $$.tipo = $1.tipo;}
+expIg  : expRel { $$.tipo = $1.tipo;
+                  $$.pos = $1.pos;
+                }
        | expIg opIg expRel {
            $$.tipo = T_ERROR;
             if($1.tipo != T_ERROR && $3.tipo != T_ERROR) {   
@@ -222,12 +224,14 @@ expIg  : expRel { $$.tipo = $1.tipo;}
                         $$.pos=creaVarTemp();
 
                         emite(EASIG, crArgEnt(TRUE), crArgNul(), crArgPos($$.pos));
-                        emite($2, crArgPos($1.pos), crArgPos($3.pos), crArgPos(si + 2));
+                        emite($2, crArgPos($1.pos), crArgPos($3.pos), crArgEtq(si + 2));
                         emite(EASIG, crArgEnt(FALSE), crArgNul(), crArgPos($$.pos));
                       }
             }}
        ;
-expRel : expAd { $$.tipo = $1.tipo;}
+expRel : expAd { $$.tipo = $1.tipo;
+                 $$.pos = $1.pos;
+                }
        | expRel opRel expAd {
            $$.tipo = T_ERROR;
            if($1.tipo != T_ERROR && $3.tipo != T_ERROR) {
@@ -241,12 +245,14 @@ expRel : expAd { $$.tipo = $1.tipo;}
               $$.pos = creaVarTemp();
 
               emite(EASIG, crArgEnt(TRUE), crArgNul(), crArgPos($$.pos));
-              emite($2, crArgPos($1.pos), crArgPos($3.pos), crArgPos(si + 2));
+              emite($2, crArgPos($1.pos), crArgPos($3.pos), crArgEtq(si + 2));
               emite(EASIG, crArgEnt(FALSE), crArgNul(), crArgPos($$.pos));
             }
        }}
        ;
-expAd  : expMul { $$.tipo = $1.tipo;}
+expAd  : expMul { $$.tipo = $1.tipo;
+                  $$.pos = $1.pos;
+                }
        | expAd opAd expMul{ 
            $$.tipo = T_ERROR;
             if ($1.tipo != T_ERROR && $3.tipo != T_ERROR) {
@@ -263,7 +269,9 @@ expAd  : expMul { $$.tipo = $1.tipo;}
             }
         } 
        ;
-expMul : expUn { $$.tipo = $1.tipo;}
+expMul : expUn { $$.tipo = $1.tipo;
+                 $$.pos = $1.pos;
+                }
        | expMul opMul expUn {
             $$.tipo = T_ERROR;
             if ($1.tipo != T_ERROR && $3.tipo != T_ERROR) {
@@ -280,7 +288,9 @@ expMul : expUn { $$.tipo = $1.tipo;}
             }
        }
        ;
-expUn  : expSuf { $$.tipo = $1.tipo;$$.pos=$1.pos;}
+expUn  : expSuf { $$.tipo = $1.tipo;
+                  $$.pos=$1.pos;
+                  }
        | opUn  expUn {
             
             $$.tipo = T_ERROR;
@@ -319,7 +329,9 @@ expUn  : expSuf { $$.tipo = $1.tipo;$$.pos=$1.pos;}
                     }
         }
         ;           
-expSuf : PARA_ expr  PARC_ { $$.tipo = $2.tipo;}//sea error o otra cosa se sube
+expSuf : PARA_ expr  PARC_ { $$.tipo = $2.tipo;
+                             $$.pos = $1.pos;
+                            }//sea error o otra cosa se sube
        | ID_    opIn
                { SIMB simb = obtTdS($1); //Comprobamos que la variable ID_ ha sido declarada
                $$.tipo = T_ERROR;
