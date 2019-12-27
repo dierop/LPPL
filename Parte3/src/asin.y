@@ -163,7 +163,8 @@ expr    : expLog
                                             yyerror(E_VAR_NO_DEC);
                                     else{   if (simb.tipo !=T_RECORD)
                                                 yyerror(E_TIPOS);
-                                            else{  CAMP reg = obtTdR(simb.ref,$3);
+                                            else{  
+                                                CAMP reg = obtTdR(simb.ref,$3);
                                                 if (reg.tipo == T_ERROR)
                                                     yyerror(E_CAMPO_NO_DEC);
                                                 else{ if(reg.tipo!= $5.tipo)
@@ -216,7 +217,14 @@ expIg  : expRel { $$.tipo = $1.tipo;}
                     yyerror(E_TIPOS);
                 else if($1.tipo != T_ENTERO|| $3.tipo != T_ENTERO) 
                         yyerror(E_EXP_IGUALDAD);
-                      else $$.tipo = T_LOGICO;
+                      else {
+                        $$.tipo = T_LOGICO;
+                        $$.pos=creaVarTemp();
+
+                        emite(EASIG, crArgEnt(TRUE), crArgNul(), crArgPos($$.pos));
+                        emite($2, crArgPos($1.pos), crArgPos($3.pos), crArgPos(si + 2));
+                        emite(EASIG, crArgEnt(FALSE), crArgNul(), crArgPos($$.pos));
+                      }
             }}
        ;
 expRel : expAd { $$.tipo = $1.tipo;}
@@ -228,7 +236,14 @@ expRel : expAd { $$.tipo = $1.tipo;}
                yyerror(E_TIPOS);
             } else if($1.tipo != T_ENTERO) {
                yyerror(E_TIPOS);
-            } else $$.tipo = T_LOGICO;
+            } else {
+              $$.tipo = T_LOGICO;
+              $$.pos = creaVarTemp();
+
+              emite(EASIG, crArgEnt(TRUE), crArgNul(), crArgPos($$.pos));
+              emite($2, crArgPos($1.pos), crArgPos($3.pos), crArgPos(si + 2));
+              emite(EASIG, crArgEnt(FALSE), crArgNul(), crArgPos($$.pos));
+            }
        }}
        ;
 expAd  : expMul { $$.tipo = $1.tipo;}
@@ -239,7 +254,12 @@ expAd  : expMul { $$.tipo = $1.tipo;}
                     yyerror("Tipos no coinciden en operacion aditiva");
                 } else if ($1.tipo != T_ENTERO && $3.tipo != T_ENTERO) {
                     yyerror("Operacion aditiva solo acepta argumentos enteros");
-                } else $$.tipo = T_ENTERO;
+                } else {
+                  $$.tipo = T_ENTERO;
+                  $$.pos = creaVarTemp();
+
+                  emite($2, crArgPos($1.pos), crArgPos($3.pos), crArgPos($$.pos));
+                }
             }
         } 
        ;
@@ -251,7 +271,12 @@ expMul : expUn { $$.tipo = $1.tipo;}
                     yyerror("Tipos no coinciden en operacion multiplicativa");
                 } else if ($1.tipo != T_ENTERO && $3.tipo != T_ENTERO) {
                     yyerror("Operacion multiplicativa solo acepta argumentos enteros");
-                } else $$.tipo = T_ENTERO;
+                } else {
+                  $$.tipo = T_ENTERO;
+                  $$.pos = creaVarTemp();
+
+                  emite($2, crArgPos($1.pos), crArgPos($3.pos), crArgPos($$.pos));
+                }
             }
        }
        ;
