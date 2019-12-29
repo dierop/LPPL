@@ -353,25 +353,36 @@ expSuf : PARA_ expr  PARC_ { $$.tipo = $2.tipo;}//sea error o otra cosa se sube
                if (simb.tipo == T_ERROR)
                    yyerror(E_VAR_NO_DEC);
                else if(simb.tipo !=T_ENTERO)
-                        yyerror(E_VAR_NO_TIPO_ESPERADO);
-                    else
-                        $$.tipo = simb.tipo; }
+                   yyerror(E_VAR_NO_TIPO_ESPERADO);
+                    else {
+                        $$.tipo = simb.tipo;
+                        $$.pos=creaVarTemp();
+                        emite($2,crArgEnt(1),crArgPos(simb.desp),crArgPos($$.pos));
+                        emite(EASIG,crArgPos($$.pos),crArgNul(),crArgPos(simb.desp));
+                        }
+                    }
        | ID_    CORA_  expr CORC_
               { SIMB simb = obtTdS($1); //Comprobamos que la variable ID_ ha sido declarada
                $$.tipo = T_ERROR;
                if (simb.tipo == T_ERROR)
                    yyerror(E_VAR_NO_DEC);
-               else if(simb.tipo != T_ARRAY)
+               else if(simb.tipo != T_ARRAY || $3.tipo != T_ENTERO)
                     yyerror(E_VAR_NO_TIPO_ESPERADO);
-                    else
-                     $$.tipo = obtTdA(simb.ref).telem;}
+                    else {
+                     $$.tipo = obtTdA(simb.ref).telem;
+                     emite(EAV,crArgPos(simb.desp),crArgPos($3.pos),crArgPos($$.pos));
+                     }
+                }
        | ID_
               { SIMB simb = obtTdS($1); //Comprobamos que la variable ID_ ha sido declarada
                $$.tipo = T_ERROR;
                if (simb.tipo == T_ERROR)
                    yyerror(E_VAR_NO_DEC);
-               else
-                     $$.tipo = simb.tipo;}
+               else{
+                     $$.tipo = simb.tipo;
+                      emite(EASIG,crArgPos(simb.desp),crArgNul(),crArgPos($$.pos));
+                     }
+                     }
        | ID_    PUNTO_ ID_{
             $$.tipo = T_ERROR;
             SIMB simb = obtTdS($1);
@@ -384,10 +395,13 @@ expSuf : PARA_ expr  PARC_ { $$.tipo = $2.tipo;}//sea error o otra cosa se sube
                                     yyerror(E_CAMPO_NO_DEC);
                             else{
                                 $$.tipo = reg.tipo;
+                                emite(EASIG,crArgPos(reg.desp),crArgNul(),crArgPos($$.pos));
                             }
                     }
             }}
-       | con    {$$.tipo=$1.tipo;}
+       | con    {$$.tipo=$1.tipo;
+                emite(EASIG,crArgPos($1.pos),crArgNul(),crArgPos($$.pos));
+       }
        ;
 con    : CTE_   {$$.tipo=T_ENTERO;
                  $$.valor = $1;
