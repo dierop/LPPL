@@ -117,31 +117,48 @@ insES  : READ_  PARA_ ID_ PARC_ PUNTOCOMA_ {
        }
        ;
 insSel : IF_ PARA_ expr PARC_ ins ELSE_ ins
-        { if ($3.tipo != T_LOGICO && $3.tipo != T_ERROR) yyerror(E_IF_LOGICO); }
+        { if ($3.tipo != T_LOGICO && $3.tipo != T_ERROR) yyerror(E_IF_LOGICO);
+        else {
+            emite(EIGUAL, crArgPos($3.pos), crArgEnt(FALSE),crArgEtq(si+2));
+        } }
        ;
 
 
 insIt  : WHILE_ PARA_ expr PARC_ ins
-        { if ($3.tipo != T_LOGICO && $3.tipo != T_ERROR) yyerror(E_WHILE_LOGICO); }
+        { if ($3.tipo != T_LOGICO && $3.tipo != T_ERROR) yyerror(E_WHILE_LOGICO);
+        else {
+            emite(EIGUAL, crArgPos($3.pos), crArgEnt(FALSE),crArgEtq(si+2));
+            emite(GOTOS, crArgNul(), crArgNul(), crArgEtq(si));
+        } }
        ;
 insExp : expr PUNTOCOMA_
        | PUNTOCOMA_
        ;
 expr    : expLog
-        {$$.tipo = $1.tipo;}
+        {$$.tipo = $1.tipo; $$.valor = $1.valor; $$.pos = $1.pos;}
        | ID_ opAsig  expr{ $$.tipo = T_ERROR;
+                    SIMB simb;
                      if ($3.tipo != T_ERROR) { //La expresion no es de tipo error, por tanto
-                          SIMB simb = obtTdS($1); //tomamos los valores del ID_
+                          simb = obtTdS($1); //tomamos los valores del ID_
                           if (simb.tipo == T_ERROR)  //Si no esta declarado
                               yyerror(E_VAR_NO_DEC);
                           else if (simb.tipo != $3.tipo)  //Si no tiene el mismo tipo las expresiones
                               yyerror(E_TIPOS);
                            else  //en otro caso, asumimos que es correcto y por tanto
                               $$.tipo = simb.tipo;   
-                      } } 
+                      }
+                      $$.pos = creaVarTemp();
+                      if($2 == EASIG)
+                        emite(EASIG, crArgPos($3.pos),crArgNul(),crArgPos($$.pos));
+                      else {
+                            emite($2, crArgPos(simb.desp), crArgPos($3.pos), crArgPos($$.pos));
+                        }
+                        emite(EASIG, crArgPos($$.pos), crArgNul(), crArgPos(simb.desp));  } 
+
        | ID_ CORA_  expr CORC_ opAsig expr{ $$.tipo = T_ERROR;
+                                        SIMB simb;
                                           if ($3.tipo != T_ERROR && $6.tipo != T_ERROR) { //Ninguna de las dos expresiones es de tipo error
-                                               SIMB simb = obtTdS($1);
+                                               simb = obtTdS($1);
                                                $$.tipo = T_ERROR;
                                                if (simb.tipo == T_ERROR) {//La expresion principal tampoco es de tipo error
                                                    yyerror(E_VAR_NO_DEC);
@@ -156,15 +173,24 @@ expr    : expLog
                                                                 $$.tipo = $6.tipo;
                                                         }    
                                                  }}
-                                            }}
+                                            }
+                                        $$.pos = creaVarTemp();
+                                        if($5 != EASIG) {
+                                            emite(EAV, crArgPos(simb.desp), crArgPos($3.pos), crArgPos($$.pos));
+                                            emite($5, crArgPos($$.pos), crArgPos($6.pos), crArgPos($$.pos));
+                                        } else {
+                                            emite($5, crArgPos($6.pos), crArgNul(), crArgPos($$.pos));
+                                        }
+                                        emite(EVA, crArgPos(simb.desp), crArgPos($3.pos), crArgPos($$.pos));
+                                        }
+    
        | ID_ PUNTO_ ID_ opAsig expr{ $$.tipo = T_ERROR;
                                     SIMB simb = obtTdS($1);
                                     if(simb.tipo == T_ERROR) 
                                             yyerror(E_VAR_NO_DEC);
                                     else{   if (simb.tipo !=T_RECORD)
                                                 yyerror(E_TIPOS);
-                                            else{  
-                                                CAMP reg = obtTdR(simb.ref,$3);
+                                            else{  CAMP reg = obtTdR(simb.ref,$3);
                                                 if (reg.tipo == T_ERROR)
                                                     yyerror(E_CAMPO_NO_DEC);
                                                 else{ if(reg.tipo!= $5.tipo)
@@ -209,9 +235,7 @@ expLog : expIg { $$.tipo = $1.tipo;
             }
         }}
        ;
-expIg  : expRel { $$.tipo = $1.tipo;
-                  $$.pos = $1.pos;
-                }
+expIg  : expRel { $$.tipo = $1.tipo;}
        | expIg opIg expRel {
            $$.tipo = T_ERROR;
             if($1.tipo != T_ERROR && $3.tipo != T_ERROR) {   
@@ -219,19 +243,10 @@ expIg  : expRel { $$.tipo = $1.tipo;
                     yyerror(E_TIPOS);
                 else if($1.tipo != T_ENTERO|| $3.tipo != T_ENTERO) 
                         yyerror(E_EXP_IGUALDAD);
-                      else {
-                        $$.tipo = T_LOGICO;
-                        $$.pos=creaVarTemp();
-
-                        emite(EASIG, crArgEnt(TRUE), crArgNul(), crArgPos($$.pos));
-                        emite($2, crArgPos($1.pos), crArgPos($3.pos), crArgEtq(si + 2));
-                        emite(EASIG, crArgEnt(FALSE), crArgNul(), crArgPos($$.pos));
-                      }
+                      else $$.tipo = T_LOGICO;
             }}
        ;
-expRel : expAd { $$.tipo = $1.tipo;
-                 $$.pos = $1.pos;
-                }
+expRel : expAd { $$.tipo = $1.tipo;}
        | expRel opRel expAd {
            $$.tipo = T_ERROR;
            if($1.tipo != T_ERROR && $3.tipo != T_ERROR) {
@@ -240,19 +255,10 @@ expRel : expAd { $$.tipo = $1.tipo;
                yyerror(E_TIPOS);
             } else if($1.tipo != T_ENTERO) {
                yyerror(E_TIPOS);
-            } else {
-              $$.tipo = T_LOGICO;
-              $$.pos = creaVarTemp();
-
-              emite(EASIG, crArgEnt(TRUE), crArgNul(), crArgPos($$.pos));
-              emite($2, crArgPos($1.pos), crArgPos($3.pos), crArgEtq(si + 2));
-              emite(EASIG, crArgEnt(FALSE), crArgNul(), crArgPos($$.pos));
-            }
+            } else $$.tipo = T_LOGICO;
        }}
        ;
-expAd  : expMul { $$.tipo = $1.tipo;
-                  $$.pos = $1.pos;
-                }
+expAd  : expMul { $$.tipo = $1.tipo;}
        | expAd opAd expMul{ 
            $$.tipo = T_ERROR;
             if ($1.tipo != T_ERROR && $3.tipo != T_ERROR) {
@@ -260,18 +266,11 @@ expAd  : expMul { $$.tipo = $1.tipo;
                     yyerror("Tipos no coinciden en operacion aditiva");
                 } else if ($1.tipo != T_ENTERO && $3.tipo != T_ENTERO) {
                     yyerror("Operacion aditiva solo acepta argumentos enteros");
-                } else {
-                  $$.tipo = T_ENTERO;
-                  $$.pos = creaVarTemp();
-
-                  emite($2, crArgPos($1.pos), crArgPos($3.pos), crArgPos($$.pos));
-                }
+                } else $$.tipo = T_ENTERO;
             }
         } 
        ;
-expMul : expUn { $$.tipo = $1.tipo;
-                 $$.pos = $1.pos;
-                }
+expMul : expUn { $$.tipo = $1.tipo;}
        | expMul opMul expUn {
             $$.tipo = T_ERROR;
             if ($1.tipo != T_ERROR && $3.tipo != T_ERROR) {
@@ -279,18 +278,11 @@ expMul : expUn { $$.tipo = $1.tipo;
                     yyerror("Tipos no coinciden en operacion multiplicativa");
                 } else if ($1.tipo != T_ENTERO && $3.tipo != T_ENTERO) {
                     yyerror("Operacion multiplicativa solo acepta argumentos enteros");
-                } else {
-                  $$.tipo = T_ENTERO;
-                  $$.pos = creaVarTemp();
-
-                  emite($2, crArgPos($1.pos), crArgPos($3.pos), crArgPos($$.pos));
-                }
+                } else $$.tipo = T_ENTERO;
             }
        }
        ;
-expUn  : expSuf { $$.tipo = $1.tipo;
-                  $$.pos=$1.pos;
-                  }
+expUn  : expSuf { $$.tipo = $1.tipo;$$.pos=$1.pos;}
        | opUn  expUn {
             
             $$.tipo = T_ERROR;
@@ -329,9 +321,7 @@ expUn  : expSuf { $$.tipo = $1.tipo;
                     }
         }
         ;           
-expSuf : PARA_ expr  PARC_ { $$.tipo = $2.tipo;
-                             $$.pos = $1.pos;
-                            }//sea error o otra cosa se sube
+expSuf : PARA_ expr  PARC_ { $$.tipo = $2.tipo;}//sea error o otra cosa se sube
        | ID_    opIn
                { SIMB simb = obtTdS($1); //Comprobamos que la variable ID_ ha sido declarada
                $$.tipo = T_ERROR;
