@@ -370,6 +370,7 @@ expSuf : PARA_ expr  PARC_ { $$.tipo = $2.tipo;}//sea error o otra cosa se sube
                     yyerror(E_VAR_NO_TIPO_ESPERADO);
                     else {
                      $$.tipo = obtTdA(simb.ref).telem;
+                     $$.pos=creaVarTemp();
                      emite(EAV,crArgPos(simb.desp),crArgPos($3.pos),crArgPos($$.pos));
                      }
                 }
@@ -380,6 +381,7 @@ expSuf : PARA_ expr  PARC_ { $$.tipo = $2.tipo;}//sea error o otra cosa se sube
                    yyerror(E_VAR_NO_DEC);
                else{
                      $$.tipo = simb.tipo;
+                     $$.pos=creaVarTemp();
                       emite(EASIG,crArgPos(simb.desp),crArgNul(),crArgPos($$.pos));
                      }
                      }
@@ -395,11 +397,13 @@ expSuf : PARA_ expr  PARC_ { $$.tipo = $2.tipo;}//sea error o otra cosa se sube
                                     yyerror(E_CAMPO_NO_DEC);
                             else{
                                 $$.tipo = reg.tipo;
+                                $$.pos=creaVarTemp();
                                 emite(EASIG,crArgPos(reg.desp),crArgNul(),crArgPos($$.pos));
                             }
                     }
             }}
        | con    {$$.tipo=$1.tipo;
+                $$.pos=creaVarTemp();
                 emite(EASIG,crArgPos($1.pos),crArgNul(),crArgPos($$.pos));
        }
        ;
