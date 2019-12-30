@@ -346,7 +346,9 @@ expUn  : expSuf { $$.tipo = $1.tipo;$$.pos=$1.pos;}
                     }
         }
         ;           
-expSuf : PARA_ expr  PARC_ { $$.tipo = $2.tipo;}//sea error o otra cosa se sube
+expSuf : PARA_ expr  PARC_ { $$.tipo = $2.tipo;
+                             $$.pos=creaVarTemp();
+                              emite(EASIG,crArgPos($2.pos),crArgNul(),crArgPos($$.pos));}//sea error o otra cosa se sube
        | ID_    opIn
                { SIMB simb = obtTdS($1); //Comprobamos que la variable ID_ ha sido declarada
                $$.tipo = T_ERROR;
@@ -357,8 +359,9 @@ expSuf : PARA_ expr  PARC_ { $$.tipo = $2.tipo;}//sea error o otra cosa se sube
                     else {
                         $$.tipo = simb.tipo;
                         $$.pos=creaVarTemp();
-                        emite($2,crArgEnt(1),crArgPos(simb.desp),crArgPos($$.pos));
-                        emite(EASIG,crArgPos($$.pos),crArgNul(),crArgPos(simb.desp));
+                        emite(EASIG,crArgPos(simb.desp),crArgNul(),crArgPos($$.pos));
+                        emite($2,crArgEnt(1),crArgPos(simb.desp),crArgPos(simb.desp));
+                        
                         }
                     }
        | ID_    CORA_  expr CORC_
@@ -398,7 +401,7 @@ expSuf : PARA_ expr  PARC_ { $$.tipo = $2.tipo;}//sea error o otra cosa se sube
                             else{
                                 $$.tipo = reg.tipo;
                                 $$.pos=creaVarTemp();
-                                emite(EASIG,crArgPos(reg.desp),crArgNul(),crArgPos($$.pos));
+                                emite(EASIG,crArgPos(simb.desp+reg.desp),crArgNul(),crArgPos($$.pos));
                             }
                     }
             }}
