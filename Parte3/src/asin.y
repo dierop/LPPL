@@ -116,20 +116,34 @@ insES  : READ_  PARA_ ID_ PARC_ PUNTOCOMA_ {
            else emite(EWRITE, crArgNul(), crArgNul(), crArgPos($3.pos));
        }
        ;
-insSel : IF_ PARA_ expr PARC_ ins ELSE_ ins
+insSel : IF_ PARA_ expr PARC_
         { if ($3.tipo != T_LOGICO && $3.tipo != T_ERROR) yyerror(E_IF_LOGICO);
         else {
-            emite(EIGUAL, crArgPos($3.pos), crArgEnt(FALSE),crArgEtq(si+2));
-        } }
+             $<cent>$ = creaLans(si);
+             emite(EIGUAL, crArgPos($3.pos), crArgEnt(FALSE), crArgEtq($<cent>$));
+        }}
+        ins {
+        $<cent>$ = creaLans(si);
+        emite(GOTOS, crArgNul(), crArgNul(), crArgEtq($<cent>$));
+        completaLans($<cent>5, crArgEtq(si));}
+        ELSE_ ins
+        { completaLans($<cent>7, crArgEtq(si)); }
        ;
 
 
-insIt  : WHILE_ PARA_ expr PARC_ ins
-        { if ($3.tipo != T_LOGICO && $3.tipo != T_ERROR) yyerror(E_WHILE_LOGICO);
+insIt  : WHILE_
+        {$<cent>$ = si;
+        }
+         PARA_ expr PARC_ 
+        { if ($4.tipo != T_LOGICO && $4.tipo != T_ERROR) yyerror(E_WHILE_LOGICO);
         else {
-            emite(EIGUAL, crArgPos($3.pos), crArgEnt(FALSE),crArgEtq(si+2));
-            emite(GOTOS, crArgNul(), crArgNul(), crArgEtq(si));
+            $<cent>$ = creaLans(si);
+            emite(EDIST, crArgPos($4.pos), crArgEnt(TRUE),crArgEtq($<cent>$));
         } }
+        ins{ 
+        emite(GOTOS, crArgNul(), crArgNul(), crArgEtq($<cent>2));
+        completaLans($<cent>6, crArgEtq(si)); 
+        }
        ;
 insExp : expr PUNTOCOMA_
        | PUNTOCOMA_
@@ -249,7 +263,7 @@ expIg  : expRel { $$.tipo = $1.tipo;}
                         $$.pos=creaVarTemp();
 
                         emite(EASIG, crArgEnt(TRUE), crArgNul(), crArgPos($$.pos));
-                        emite($2, crArgPos($1.pos), crArgPos($3.pos), crArgPos(si + 2));
+                        emite($2, crArgPos($1.pos), crArgPos($3.pos), crArgEtq(si + 2));
                         emite(EASIG, crArgEnt(FALSE), crArgNul(), crArgPos($$.pos));
                       }
             }}
@@ -268,7 +282,7 @@ expRel : expAd { $$.tipo = $1.tipo;}
               $$.pos = creaVarTemp();
 
               emite(EASIG, crArgEnt(TRUE), crArgNul(), crArgPos($$.pos));
-              emite($2, crArgPos($1.pos), crArgPos($3.pos), crArgPos(si + 2));
+              emite($2, crArgPos($1.pos), crArgPos($3.pos), crArgEtq(si + 2));
               emite(EASIG, crArgEnt(FALSE), crArgNul(), crArgPos($$.pos));
             }
        }}
@@ -319,7 +333,7 @@ expUn  : expSuf { $$.tipo = $1.tipo;$$.pos=$1.pos;}
                     else{
                         $$.tipo = $2.tipo;
                         emite(EASIG,crArgEnt(TRUE),crArgNul(),crArgPos($$.pos));
-                        emite(EIGUAL,crArgPos($2.pos),crArgEnt(TRUE),crArgEtq(si+2));
+                        emite(EDIST,crArgPos($2.pos),crArgEnt(TRUE),crArgEtq(si+2));
                         emite(EASIG,crArgEnt(FALSE),crArgNul(),crArgPos($$.pos));
                     }
                 } 
@@ -341,7 +355,7 @@ expUn  : expSuf { $$.tipo = $1.tipo;$$.pos=$1.pos;}
                     else{
                         $$.tipo = simb.tipo;
                         $$.pos=creaVarTemp();
-                        emite($1,crArgEnt(1),crArgPos(simb.desp),crArgPos($$.pos));
+                        emite($1,crArgPos(simb.desp),crArgEnt(1),crArgPos($$.pos));
                         emite(EASIG,crArgPos($$.pos),crArgNul(),crArgPos(simb.desp));
                     }
         }
@@ -360,7 +374,7 @@ expSuf : PARA_ expr  PARC_ { $$.tipo = $2.tipo;
                         $$.tipo = simb.tipo;
                         $$.pos=creaVarTemp();
                         emite(EASIG,crArgPos(simb.desp),crArgNul(),crArgPos($$.pos));
-                        emite($2,crArgEnt(1),crArgPos(simb.desp),crArgPos(simb.desp));
+                        emite($2,crArgPos(simb.desp),crArgEnt(1),crArgPos(simb.desp));
                         
                         }
                     }
